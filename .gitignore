@@ -1,0 +1,5 @@
+.env
+.*.tmp
+# Raw collection outputs stay local. GitHub Pages uses the compact browser bundles instead.
+*_papers.json
+atlas_state.json
