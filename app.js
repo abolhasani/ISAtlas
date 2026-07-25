@@ -66,6 +66,13 @@
     const years = records.map((record) => Number(record.publication_year)).filter((year) => year >= 1800 && year <= 3000); if (years.length) yearBounds = { min: Math.min(...years), max: Math.max(...years) };
     ['#year-range-start', '#year-range-end', '#year-from', '#year-to'].forEach((selector) => { $(selector).min = yearBounds.min; $(selector).max = yearBounds.max; }); syncYearControls();
   }
+  function updateYearBoundsForSelection() {
+    const selected = activeJournalKeys(); const source = selected.length ? state.records.filter((record) => selected.includes(record._journal)) : state.records;
+    const years = source.map((record) => Number(record.publication_year)).filter((year) => year >= 1800 && year <= 3000); if (!years.length) return;
+    yearBounds.min = Math.min(...years); const from = Number($('#year-from').value), to = Number($('#year-to').value);
+    if (from && from < yearBounds.min) $('#year-from').value = yearBounds.min; if (to && to < yearBounds.min) $('#year-to').value = yearBounds.min;
+    ['#year-range-start', '#year-range-end', '#year-from', '#year-to'].forEach((selector) => { $(selector).min = yearBounds.min; $(selector).max = yearBounds.max; }); syncYearControls();
+  }
   function updateJournalStats() {
     const active = activeJournalKeys(), host = $('#journal-stats');
     if (!active.length) { host.innerHTML = '<p>Select one or more journals to view their basic statistics.</p>'; return; }
@@ -74,6 +81,7 @@
   function resetZoom() { state.transform = { zoom: 1, x: 0, y: 0 }; $('#zoom-reset').textContent = '100%'; }
   function setZoom(next, anchor) { const box = canvas.getBoundingClientRect(), old = state.transform.zoom; const zoom = Math.max(.3, Math.min(4, next)); const point = anchor || { x: box.width / 2, y: box.height / 2 }; state.transform.x = point.x - (point.x - state.transform.x) * (zoom / old); state.transform.y = point.y - (point.y - state.transform.y) * (zoom / old); state.transform.zoom = zoom; $('#zoom-reset').textContent = `${Math.round(zoom * 100)}%`; render(); }
   function buildOverview() {
+    updateYearBoundsForSelection();
     const records = filteredRecords(); const allowed = new Set(records.map((record) => record.id));
     state.view = 'overview'; state.selected = null; resetZoom();
     state.nodes = records.map((record, index) => ({ ...record, ...coordsFor(record.id, index, records.length), fixed: false }));
