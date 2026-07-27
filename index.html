@@ -1,55 +1,30 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="The Information Systems Atlas — an interactive map of leading IS research." />
-    <title>The Information Systems Atlas</title>
-    <link rel="stylesheet" href="styles.css" />
-    <script defer src="version.js"></script>
-    <script defer src="atlas_metadata.js"></script>
-    <script defer src="atlas_index.js"></script>
-    <script defer src="app.js"></script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="An interactive map of leading information systems research." />
+    <title>The Information Systems Atlas</title><link rel="stylesheet" href="styles.css" />
+    <script defer src="version.js"></script><script defer src="atlas_metadata.js"></script><script defer src="atlas_index.js"></script><script defer src="atlas_shared.js"></script><script defer src="app.js"></script>
   </head>
   <body>
     <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
-    <header class="site-header">
-      <a class="brand" href="index.html"><span class="brand-mark">IA</span><span>The Information Systems Atlas</span></a>
-      <nav aria-label="Primary navigation"><a class="active" href="index.html">Graph</a><a href="search.html">Search &amp; extract</a><a href="changes.html">Changes</a></nav>
-      <div class="header-actions"><span class="version-pill">v<span data-version></span></span><button class="theme-toggle" type="button" aria-label="Toggle night mode">◐ <span>Night</span></button></div>
-    </header>
-
+    <header class="site-header"><a class="brand" href="index.html"><span class="brand-mark">IA</span><span>The Information Systems Atlas</span></a><nav aria-label="Primary navigation"><a class="active" href="index.html">Graph</a><a href="search.html">Search &amp; extract</a><a href="insights.html">Insights</a><a href="faq.html">FAQ</a><a href="changes.html">Changes</a></nav><div class="header-actions"><span class="version-pill">v<span data-version></span></span><button class="theme-toggle" type="button" aria-label="Toggle night mode"><span>Night</span></button></div></header>
     <main class="graph-layout">
-      <section class="hero-panel">
-        <p class="eyebrow">Research network explorer</p>
-        <h1>Follow the ideas that connect information systems research.</h1>
-        <p>Filter the leading journals, then drift through their citation network. Select a paper to open its immediate intellectual neighborhood.</p>
-      </section>
-
+      <section class="hero-panel"><p class="eyebrow">Research network explorer</p><h1>Follow the ideas that connect information systems research.</h1><p>Filter the focal journals, then explore direct citation relationships. Select a focal paper to open its complete cited and citing neighborhood.</p></section>
       <section class="control-panel" aria-label="Graph filters">
         <div class="control-heading"><strong>Network controls</strong><button id="reset-view" class="text-button" type="button">Reset view</button></div>
-        <fieldset><legend>Journals</legend><div class="journal-options">
-          <label><input type="checkbox" name="journal" value="mis_quarterly" /> <span class="journal-dot misq"></span>MIS Quarterly</label>
-          <label><input type="checkbox" name="journal" value="information_systems_research" /> <span class="journal-dot isr"></span>Information Systems Research</label>
-          <label><input type="checkbox" name="journal" value="journal_of_management_information_systems" /> <span class="journal-dot jmis"></span>Journal of Management Information Systems</label>
-        </div></fieldset>
+        <fieldset><legend>Journals</legend><div class="journal-options"><label><input type="checkbox" name="journal" value="mis_quarterly" /> <span class="journal-dot misq"></span>MIS Quarterly</label><label><input type="checkbox" name="journal" value="information_systems_research" /> <span class="journal-dot isr"></span>Information Systems Research</label><label><input type="checkbox" name="journal" value="journal_of_management_information_systems" /> <span class="journal-dot jmis"></span>Journal of Management Information Systems</label></div></fieldset>
         <div id="journal-stats" class="journal-stats" aria-live="polite"><p>Select one or more journals to view their basic statistics.</p></div>
-        <fieldset class="year-range-control"><legend>Publication period</legend><div class="year-range-labels"><span id="year-range-start-label">From 2026</span><span id="year-range-end-label">To all years</span></div><div class="range-sliders"><input id="year-range-start" type="range" min="1900" max="2026" value="2026" aria-label="Publication period start year" /><input id="year-range-end" type="range" min="1900" max="2026" value="2026" aria-label="Publication period end year" /></div></fieldset>
-        <div class="filter-grid"><label>From year<input id="year-from" type="number" min="1900" value="2026" /></label><label>To year<input id="year-to" type="number" min="1900" placeholder="All" /></label></div>
-        <label>Topic<input id="topic-filter" list="topic-options" type="search" placeholder="All topics — start typing" /><datalist id="topic-options"></datalist></label>
-        <label>Subfield<input id="subfield-filter" list="subfield-options" type="search" placeholder="All subfields — start typing" /><datalist id="subfield-options"></datalist></label>
+        <fieldset class="year-range-control"><legend>Publication period</legend><div class="year-range-labels"><span id="year-range-start-label">From 1977</span><span id="year-range-end-label">To all years</span></div><div class="range-sliders"><input id="year-range-start" type="range" min="1977" max="2026" value="2026" aria-label="Publication period start year" /><input id="year-range-end" type="range" min="1977" max="2026" value="2026" aria-label="Publication period end year" /></div></fieldset>
+        <div class="filter-grid"><label>From year<input id="year-from" type="number" min="1977" value="2026" /></label><label>To year<input id="year-to" type="number" min="1977" placeholder="All" /></label></div>
+        <label>Topic<input id="topic-filter" list="topic-options" type="search" placeholder="All topics - start typing" /><datalist id="topic-options"></datalist></label>
+        <label>Subfield<input id="subfield-filter" list="subfield-options" type="search" placeholder="All subfields - start typing" /><datalist id="subfield-options"></datalist></label>
+        <label class="flow-toggle"><input id="flow-layout" type="checkbox" /> Arrange focused citations left to right</label>
         <div class="graph-legend"><span><i class="line misq"></i>MISQ citation</span><span><i class="line isr"></i>ISR citation</span><span><i class="line jmis"></i>JMIS citation</span><span><i class="line external"></i>External citation</span></div>
       </section>
-
-      <section class="network-shell">
-        <div class="network-toolbar"><div><strong id="network-title">Filtered research network</strong><span id="network-summary">Loading records…</span></div><div class="toolbar-hint">Drag nodes · click a paper to focus</div><div class="zoom-controls"><button id="zoom-out" type="button" aria-label="Zoom out">−</button><button id="zoom-reset" type="button" aria-label="Reset zoom">100%</button><button id="zoom-in" type="button" aria-label="Zoom in">+</button></div></div>
-        <canvas id="network-canvas" aria-label="Interactive citation network"></canvas>
-        <div id="network-empty" class="network-empty" hidden>No papers match these filters.</div>
-        <div id="network-loading" class="network-loading">Preparing the Atlas data…</div>
-      </section>
+      <section class="network-shell"><div class="network-toolbar"><div><strong id="network-title">Filtered research network</strong><span id="network-summary">Loading records...</span></div><div class="toolbar-hint">Drag nodes - click a focal paper to focus</div><div class="zoom-controls"><button id="zoom-out" type="button" aria-label="Zoom out">-</button><button id="zoom-reset" type="button" aria-label="Reset zoom">100%</button><button id="zoom-in" type="button" aria-label="Zoom in">+</button></div></div><canvas id="network-canvas" aria-label="Interactive citation network"></canvas><div id="network-empty" class="network-empty" hidden>No papers match these filters.</div><div id="network-loading" class="network-loading">Preparing the Atlas data...</div></section>
     </main>
-
-    <dialog id="paper-dialog" class="paper-dialog"><button id="close-paper" class="close-dialog" aria-label="Close paper details">×</button><div id="paper-details"></div></dialog>
-    <footer>Last database update: <span data-last-update>Reading…</span> · Maintained by Sadegh Abolhasani, <a href="mailto:mohammads.abolhasani@gmail.com">mohammads.abolhasani@gmail.com</a></footer>
+    <dialog id="paper-dialog" class="paper-dialog"><button id="close-paper" class="close-dialog" aria-label="Close paper details">x</button><div id="paper-details"></div></dialog>
+    <footer>Last database update: <span data-last-update>Reading...</span> · <a href="https://www.abolhasani.net" target="_blank" rel="noreferrer">www.abolhasani.net</a> · Maintained by Sadegh Abolhasani, <a href="mailto:mohammads.abolhasani@gmail.com">mohammads.abolhasani@gmail.com</a></footer>
   </body>
 </html>

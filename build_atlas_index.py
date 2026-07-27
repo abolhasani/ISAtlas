@@ -1,15 +1,21 @@
-"""Create compact browser bundles from the Atlas collection JSON files.
+"""Create GitHub Pages-friendly browser bundles from the Atlas collection.
 
-Run this after completing a new collection or quarterly refresh:
+Run after a complete collection or quarterly refresh:
     py -3 build_atlas_index.py
+
+Focal records ship in the initial bundle. External records are split into
+small on-demand buckets so opening the graph does not download the entire
+citation neighborhood universe.
 """
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+BUCKET_COUNT = 256
 JOURNALS = {
     "mis_quarterly": "mis_quarterly_papers.json",
     "information_systems_research": "information_systems_research_papers.json",
@@ -17,8 +23,24 @@ JOURNALS = {
 }
 
 
-def names(items, field="name"):
-    return [{"name": item.get(field)} for item in (items or []) if isinstance(item, dict) and item.get(field)]
+def label(item, *keys):
+    if isinstance(item, str):
+        return item
+    if not isinstance(item, dict):
+        return None
+    for key in keys:
+        if item.get(key):
+            return item[key]
+    return None
+
+
+def names(items, *keys):
+    return [{"name": value} for item in (items or []) if (value := label(item, *keys))]
+
+
+def bucket_for(work_id):
+    digits = "".join(character for character in str(work_id or "") if character.isdigit())
+    return int(digits) % BUCKET_COUNT if digits else 0
 
 
 def compact_work(work, journal):
@@ -40,44 +62,61 @@ def compact_work(work, journal):
         "type": work.get("type"), "language": work.get("language"), "cited_by_count": work.get("cited_by_count"),
         "fwci": work.get("fwci"), "link_to_paper": work.get("link_to_paper"), "abstract": work.get("abstract"),
         "has_abstract": work.get("has_abstract"), "open_access": work.get("open_access") or {},
-        "authors": names(work.get("authors")), "institutions": names(work.get("institutions")),
+        "authors": names(work.get("authors"), "name", "display_name"),
+        "institutions": names(work.get("institutions"), "name", "display_name"),
         "primary_topic": {"name": primary.get("name")}, "topics": topics,
-        "keywords": names(work.get("keywords"), "display_name"),
-        "sustainable_development_goals": names(work.get("sustainable_development_goals"), "display_name"),
-        "referenced_work_ids": work.get("referenced_work_ids") or [], "citing_work_ids": work.get("citing_work_ids") or [],
+        "keywords": names(work.get("keywords"), "display_name", "name", "keyword"),
+        "sustainable_development_goals": names(work.get("sustainable_development_goals"), "display_name", "name"),
+        "referenced_work_ids": work.get("referenced_work_ids") or [],
+        "citing_work_ids": work.get("citing_work_ids") or [],
     }
 
 
+def write_js(path, variable, payload):
+    path.write_text(f"window.{variable}=" + json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + ";\n", encoding="utf-8")
+
+
 def main():
-    records, latest = [], []
+    records, latest, journal_summary = [], [], {}
     for journal, filename in JOURNALS.items():
-        path = ROOT / filename
-        if not path.exists():
-            continue
-        with path.open(encoding="utf-8") as handle:
+        with (ROOT / filename).open(encoding="utf-8") as handle:
             payload = json.load(handle)
-        records.extend(compact_work(work, journal) for work in (payload.get("works") or {}).values())
+        works = [compact_work(work, journal) for work in (payload.get("works") or {}).values()]
+        records.extend(works)
+        years = [work["publication_year"] for work in works if isinstance(work.get("publication_year"), int)]
+        journal_summary[journal] = {"recordCount": len(works), "firstYear": min(years) if years else None, "lastYear": max(years) if years else None}
         if payload.get("updated_at"):
             latest.append(payload["updated_at"])
-    external_path = ROOT / "atlas_external_papers.json"
-    with external_path.open(encoding="utf-8") as handle:
+
+    with (ROOT / "atlas_external_papers.json").open(encoding="utf-8") as handle:
         external_payload = json.load(handle)
-    external = []
+    buckets = defaultdict(list)
     for work in (external_payload.get("works") or {}).values():
-        external.append({"id": work.get("id"), "_journal": "external", "title": work.get("title"), "doi": work.get("doi"), "publication_year": work.get("publication_year"), "link_to_paper": work.get("link_to_paper")})
-    latest.extend([value for value in [external_payload.get("updated_at")] if value])
+        record = {"id": work.get("id"), "_journal": "external", "title": work.get("title"), "doi": work.get("doi"), "publication_year": work.get("publication_year"), "journal": work.get("journal"), "link_to_paper": work.get("link_to_paper")}
+        if record["id"]:
+            buckets[bucket_for(record["id"])].append(record)
+    latest.extend(value for value in [external_payload.get("updated_at")] if value)
+
     state_path = ROOT / "atlas_state.json"
     if state_path.exists():
         with state_path.open(encoding="utf-8") as handle:
             state = json.load(handle)
-        latest.extend([value for value in [state.get("last_successful_quarterly_refresh"), state.get("updated_at")] if value])
-    metadata = {"lastUpdated": max(latest) if latest else None, "generatedAt": datetime.now(timezone.utc).isoformat(), "recordCount": len(records), "externalCount": len(external)}
-    (ROOT / "atlas_metadata.js").write_text("window.ATLAS_METADATA=" + json.dumps(metadata, ensure_ascii=False, separators=(",", ":")) + ";\n", encoding="utf-8")
-    # Keep the initial bundle focused on focal papers; the larger external index is loaded only after a paper is opened.
-    (ROOT / "atlas_external_index.js").write_text("window.ATLAS_EXTERNAL_INDEX=" + json.dumps(external, ensure_ascii=False, separators=(",", ":")) + ";\n", encoding="utf-8")
-    bundle = {"metadata": metadata, "records": records}
-    (ROOT / "atlas_index.js").write_text("window.ATLAS_DATA=" + json.dumps(bundle, ensure_ascii=False, separators=(",", ":")) + ";\n", encoding="utf-8")
-    print(f"Wrote browser data index: {len(records):,} focal and {len(external):,} external records.")
+        latest.extend(value for value in [state.get("last_successful_quarterly_refresh"), state.get("updated_at")] if value)
+
+    metadata = {
+        "lastUpdated": max(latest) if latest else None,
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "recordCount": len(records),
+        "externalCount": sum(len(bucket) for bucket in buckets.values()),
+        "externalBucketCount": BUCKET_COUNT,
+        "journals": journal_summary,
+    }
+    write_js(ROOT / "atlas_metadata.js", "ATLAS_METADATA", metadata)
+    write_js(ROOT / "atlas_index.js", "ATLAS_DATA", {"metadata": metadata, "records": records})
+
+    for index in range(BUCKET_COUNT):
+        write_js(ROOT / f"atlas_external_{index:02d}.js", f"ATLAS_EXTERNAL_{index:02d}", buckets[index])
+    print(f"Wrote browser data: {len(records):,} focal records and {metadata['externalCount']:,} external records in {BUCKET_COUNT} on-demand buckets.")
 
 
 if __name__ == "__main__":
