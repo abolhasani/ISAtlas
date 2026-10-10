@@ -83,7 +83,9 @@ def main():
             payload = json.load(handle)
         works = [compact_work(work, journal) for work in (payload.get("works") or {}).values()]
         records.extend(works)
-        years = [work["publication_year"] for work in works if isinstance(work.get("publication_year"), int)]
+        # Use the same year bounds as the graph and search controls; OpenAlex
+        # occasionally contains placeholder dates such as 1800.
+        years = [work["publication_year"] for work in works if isinstance(work.get("publication_year"), int) and 1900 <= work["publication_year"] <= 2100]
         journal_summary[journal] = {"recordCount": len(works), "firstYear": min(years) if years else None, "lastYear": max(years) if years else None}
         if payload.get("updated_at"):
             latest.append(payload["updated_at"])

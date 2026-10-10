@@ -1,2 +1,2 @@
-window.ATLAS_VERSION = '0.3.3';
-window.ATLAS_RELEASE_DATE = '2026-07-26';
+window.ATLAS_VERSION = '0.3.4';
+window.ATLAS_RELEASE_DATE = '2026-10-09';
